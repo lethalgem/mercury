@@ -1,0 +1,38 @@
+[workspace]
+members = [
+    "mercury-derive",
+    "mercury",
+    "mercury-cli",
+]
+
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Ian Cash <iwc123@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/lethalgem/mercury"
+homepage = "https://github.com/lethalgem/mercury"
+
+[workspace.dependencies]
+# Mercury internal dependencies
+mercury = { path = "mercury", version = "0.1.0" }
+mercury-derive = { path = "mercury-derive", version = "0.1.0" }
+
+# External dependencies
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+colored = "2.1"
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
+quote = "1.0"
+regex = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+syn = { version = "2.0", features = ["full", "visit", "extra-traits"] }
+thiserror = "2.0"
+walkdir = "2.0"
+
+# Dev dependencies
+tempfile = "3.10"

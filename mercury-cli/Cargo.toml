@@ -1,0 +1,23 @@
+[package]
+name = "mercury-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "CLI tool for generating PureScript types from Rust using Mercury"
+keywords = ["purescript", "codegen", "cli", "ffi", "code-generator"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "../README.md"
+
+[[bin]]
+name = "mercury"
+path = "src/main.rs"
+
+[dependencies]
+mercury = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }

@@ -17,22 +17,15 @@ Mercury is a code generator that automatically creates PureScript type definitio
 
 ## Quick Start
 
-### 1. Add Mercury to your project
+### 1. Add Mercury to your workspace
 
 ```toml
 # Cargo.toml
+[workspace]
+members = ["lib/mercury-derive", "lib/mercury"]
+
 [dependencies]
-mercury-derive = "0.1"
-
-# For the CLI tool (optional)
-[workspace.dependencies]
-mercury = "0.1"
-```
-
-Or install the CLI globally:
-
-```bash
-cargo install mercury-cli
+mercury-derive = { path = "lib/mercury-derive" }
 ```
 
 ### 2. Annotate your Rust types
@@ -63,10 +56,6 @@ pub enum ProductStatus {
 ### 3. Generate PureScript types
 
 ```bash
-# If installed globally:
-mercury generate
-
-# Or from your workspace:
 cargo run --bin mercury -- generate
 ```
 
@@ -190,16 +179,17 @@ Mercury organizes output by source file location:
 
 ```
 Your Rust project:
-├── src/models.rs                          → Generated.Models
-├── src/user.rs                            → Generated.User
-└── src/product/
-    ├── core.rs                            → Generated.Product.Core
-    └── variant.rs                         → Generated.Product.Variant
+├── app/backend/src/models.rs              → Generated.Models
+├── lib/constitution/src/models/
+│   ├── merchant.rs                        → Generated.Merchant
+│   └── product/
+│       ├── core.rs                        → Generated.Product.Core
+│       └── variant.rs                     → Generated.Product.Variant
 
 Generated PureScript:
 frontend/src/Generated/Generated/
 ├── Models.purs
-├── User.purs
+├── Merchant.purs
 └── Product/
     ├── Core.purs
     └── Variant.purs
@@ -210,14 +200,14 @@ frontend/src/Generated/Generated/
 Mercury automatically generates import statements when types reference other types:
 
 ```rust
-// src/user.rs
+// lib/constitution/src/models/merchant.rs
 #[mercury]
-pub enum UserRole { User, Admin }
+pub enum MerchantRole { Merchant, Admin }
 
-// src/models.rs
+// app/backend/src/models.rs
 #[mercury]
-pub struct UserInfo {
-    pub role: UserRole,  // References UserRole
+pub struct MerchantInfo {
+    pub role: MerchantRole,  // References MerchantRole
 }
 ```
 
@@ -227,10 +217,10 @@ Generates with automatic import:
 -- Generated.Models
 module Generated.Models where
 
-import Generated.User (UserRole)  -- Automatically added!
+import Generated.Merchant (MerchantRole)  -- Automatically added!
 
-newtype UserInfo = UserInfo
-  { role :: UserRole
+newtype MerchantInfo = MerchantInfo
+  { role :: MerchantRole
   }
 ```
 
@@ -482,25 +472,21 @@ Ensure generated code stays in sync:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Mercury is currently an internal tool for Merchant Tech. When open-sourced, contributions will be welcome!
 
 ## License
 
-Licensed under either of:
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
+TBD - To be determined when open-sourced.
 
 ## Related Documentation
 
-- [mercury/TESTING.md](mercury/TESTING.md) - Comprehensive test documentation
-- [mercury/PUBLISHING.md](mercury/PUBLISHING.md) - Publishing to crates.io guide
+- [TESTING.md](TESTING.md) - Comprehensive test documentation
+- [PUBLISHING.md](PUBLISHING.md) - Publishing to crates.io guide
+- [Merchant Tech Project README](../../README.md) - Main project documentation
 
 ## Support
 
-For issues or questions, please open an issue on [GitHub](https://github.com/lethalgem/mercury/issues).
+For issues or questions, contact the Merchant Tech development team.
 
 ---
 
