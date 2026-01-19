@@ -89,7 +89,7 @@ fn generate_command(
     // Always show scanning message
     println!("{} Scanning workspace...", "✓".green());
 
-    let result = mercury::generate(&workspace)?;
+    let result = cargo_mercury::generate(&workspace)?;
 
     if result.type_count == 0 {
         println!("{}", "⚠️  No #[mercury] annotated types found".yellow());
@@ -199,7 +199,7 @@ fn check_command(workspace: PathBuf, fail_on_diff: bool) -> anyhow::Result<()> {
 
     // We'll need to temporarily change output directory
     // For now, let's regenerate in place and compare
-    let result = mercury::generate(&workspace)?;
+    let result = cargo_mercury::generate(&workspace)?;
 
     // Read existing generated files and compare
     let output_dir = PathBuf::from("frontend/src/Generated/Generated");

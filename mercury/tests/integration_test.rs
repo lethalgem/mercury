@@ -15,7 +15,7 @@ fn get_workspace_root() -> PathBuf {
 fn test_empty_workspace() {
     let temp_dir = std::env::temp_dir().join("mercury_test_empty");
     fs::create_dir_all(&temp_dir).unwrap();
-    let result = mercury::generate(&temp_dir).unwrap();
+    let result = cargo_mercury::generate(&temp_dir).unwrap();
     assert_eq!(result.type_count, 0);
     assert_eq!(result.module_count, 0);
     fs::remove_dir_all(&temp_dir).ok();
@@ -24,12 +24,12 @@ fn test_empty_workspace() {
 #[test]
 fn test_deterministic_output() {
     let workspace_root = get_workspace_root();
-    let result1 = mercury::generate(&workspace_root).unwrap();
+    let result1 = cargo_mercury::generate(&workspace_root).unwrap();
     let mut first_gen = std::collections::HashMap::new();
     for file_path in &result1.generated_files {
         first_gen.insert(file_path.clone(), fs::read_to_string(file_path).unwrap());
     }
-    let result2 = mercury::generate(&workspace_root).unwrap();
+    let result2 = cargo_mercury::generate(&workspace_root).unwrap();
     assert_eq!(result1.type_count, result2.type_count);
     for file_path in &result2.generated_files {
         assert_eq!(
@@ -42,7 +42,7 @@ fn test_deterministic_output() {
 #[test]
 fn test_cross_module_imports() {
     let workspace_root = get_workspace_root();
-    mercury::generate(&workspace_root).unwrap();
+    cargo_mercury::generate(&workspace_root).unwrap();
     let models_path = workspace_root.join("frontend/src/Generated/Generated/Models.purs");
     let content = fs::read_to_string(&models_path).unwrap();
     assert!(content.contains("import Generated.Merchant (MerchantRole)"));

@@ -1,5 +1,5 @@
 [package]
-name = "mercury"
+name = "cargo-mercury"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

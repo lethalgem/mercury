@@ -17,7 +17,7 @@ name = "mercury"
 path = "src/main.rs"
 
 [dependencies]
-mercury = { workspace = true }
+cargo-mercury = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 colored = { workspace = true }
