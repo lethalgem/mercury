@@ -39,11 +39,5 @@ fn test_deterministic_output() {
     }
 }
 
-#[test]
-fn test_cross_module_imports() {
-    let workspace_root = get_workspace_root();
-    cargo_mercury::generate(&workspace_root).unwrap();
-    let models_path = workspace_root.join("frontend/src/Generated/Generated/Models.purs");
-    let content = fs::read_to_string(&models_path).unwrap();
-    assert!(content.contains("import Generated.Merchant (MerchantRole)"));
-}
+// Note: Cross-module import tests are application-specific
+// and tested in the consuming project
