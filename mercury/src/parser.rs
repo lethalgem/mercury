@@ -175,6 +175,16 @@ fn parse_type(ty: &Type) -> RustType {
                 return RustType::Uuid;
             }
 
+            // Handle rust_decimal::Decimal -> Number
+            if type_name == "Decimal" {
+                return RustType::Decimal;
+            }
+
+            // Handle serde_json::Value -> Json
+            if type_name == "Value" {
+                return RustType::JsonValue;
+            }
+
             // Handle primitive types
             match type_name.as_str() {
                 "i32" | "i64" => RustType::Int,
@@ -501,6 +511,102 @@ mod tests {
             assert_eq!(
                 struct_type.fields[1].field_type,
                 RustType::Option(Box::new(RustType::Uuid))
+            );
+        } else {
+            panic!("Expected struct type");
+        }
+    }
+
+    #[test]
+    fn test_parse_decimal_type() {
+        let source = r#"
+            use rust_decimal::Decimal;
+
+            #[mercury]
+            pub struct Invoice {
+                pub amount: Decimal,
+            }
+        "#;
+
+        let result = parse_file(&PathBuf::from("test.rs"), source).unwrap();
+
+        if let TypeKind::Struct(struct_type) = &result[0].kind {
+            assert_eq!(struct_type.fields[0].field_type, RustType::Decimal);
+        } else {
+            panic!("Expected struct type");
+        }
+    }
+
+    #[test]
+    fn test_parse_serde_value_type() {
+        let source = r#"
+            use serde_json::Value;
+
+            #[mercury]
+            pub struct Payload {
+                pub data: Value,
+            }
+        "#;
+
+        let result = parse_file(&PathBuf::from("test.rs"), source).unwrap();
+
+        if let TypeKind::Struct(struct_type) = &result[0].kind {
+            assert_eq!(struct_type.fields[0].field_type, RustType::JsonValue);
+        } else {
+            panic!("Expected struct type");
+        }
+    }
+
+    #[test]
+    fn test_parse_nested_decimal() {
+        let source = r#"
+            use rust_decimal::Decimal;
+
+            #[mercury]
+            pub struct Invoice {
+                pub amounts: Vec<Decimal>,
+                pub discount: Option<Decimal>,
+            }
+        "#;
+
+        let result = parse_file(&PathBuf::from("test.rs"), source).unwrap();
+
+        if let TypeKind::Struct(struct_type) = &result[0].kind {
+            assert_eq!(
+                struct_type.fields[0].field_type,
+                RustType::Vec(Box::new(RustType::Decimal))
+            );
+            assert_eq!(
+                struct_type.fields[1].field_type,
+                RustType::Option(Box::new(RustType::Decimal))
+            );
+        } else {
+            panic!("Expected struct type");
+        }
+    }
+
+    #[test]
+    fn test_parse_nested_value() {
+        let source = r#"
+            use serde_json::Value;
+
+            #[mercury]
+            pub struct Payload {
+                pub items: Vec<Value>,
+                pub metadata: Option<Value>,
+            }
+        "#;
+
+        let result = parse_file(&PathBuf::from("test.rs"), source).unwrap();
+
+        if let TypeKind::Struct(struct_type) = &result[0].kind {
+            assert_eq!(
+                struct_type.fields[0].field_type,
+                RustType::Vec(Box::new(RustType::JsonValue))
+            );
+            assert_eq!(
+                struct_type.fields[1].field_type,
+                RustType::Option(Box::new(RustType::JsonValue))
             );
         } else {
             panic!("Expected struct type");

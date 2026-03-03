@@ -80,6 +80,10 @@ pub enum RustType {
     DateTime,
     /// uuid::Uuid (mapped to MerchantFacingId in PureScript)
     Uuid,
+    /// rust_decimal::Decimal (serialized as number)
+    Decimal,
+    /// serde_json::Value (arbitrary JSON)
+    JsonValue,
     /// Option<T>
     Option(Box<RustType>),
     /// Vec<T>

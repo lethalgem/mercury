@@ -75,7 +75,7 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "cargo-mercury"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "proc-macro2",
@@ -91,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-mercury-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "cargo-mercury",
@@ -233,7 +233,7 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
 name = "mercury-derive"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

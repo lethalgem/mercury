@@ -98,6 +98,17 @@ struct ImportNeeds {
     has_required_fields: bool,
     has_optional_fields: bool,
     has_enums: bool,
+    has_json_value: bool,
+}
+
+/// Recursively check if a RustType contains JsonValue
+fn contains_json_value(rust_type: &crate::types::RustType) -> bool {
+    use crate::types::RustType;
+    match rust_type {
+        RustType::JsonValue => true,
+        RustType::Option(inner) | RustType::Vec(inner) => contains_json_value(inner),
+        _ => false,
+    }
 }
 
 fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
@@ -107,6 +118,7 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
         has_required_fields: false,
         has_optional_fields: false,
         has_enums: false,
+        has_json_value: false,
     };
 
     for type_def in type_defs {
@@ -116,6 +128,9 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
                     match &field.field_type {
                         RustType::Option(_) => needs.has_optional_fields = true,
                         _ => needs.has_required_fields = true,
+                    }
+                    if contains_json_value(&field.field_type) {
+                        needs.has_json_value = true;
                     }
                 }
             }
@@ -191,6 +206,9 @@ pub fn generate_module(
         decode_imports.join(", ")
     ));
 
+    if needs.has_json_value {
+        output.push_str("import Data.Argonaut.Core (Json)\n");
+    }
     output.push_str("import Data.Argonaut.Decode.Class (class DecodeJson)\n");
     output.push_str("import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)\n");
 
@@ -557,5 +575,81 @@ mod tests {
         assert!(output.contains("import Generated.Auth (Role)"));
         assert!(output.contains("newtype User = User"));
         assert!(output.contains("role :: Role"));
+    }
+
+    #[test]
+    fn test_generate_module_with_json_value_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "Payload".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "data".to_string(),
+                    json_name: "data".to_string(),
+                    field_type: RustType::JsonValue,
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.Argonaut.Core (Json)"));
+        assert!(output.contains("data :: Json"));
+    }
+
+    #[test]
+    fn test_generate_module_without_json_value_no_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "name".to_string(),
+                    json_name: "name".to_string(),
+                    field_type: RustType::String,
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(!output.contains("import Data.Argonaut.Core"));
+    }
+
+    #[test]
+    fn test_generate_module_with_nested_json_value_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "Payload".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "items".to_string(),
+                    json_name: "items".to_string(),
+                    field_type: RustType::Vec(Box::new(RustType::JsonValue)),
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.Argonaut.Core (Json)"));
     }
 }
