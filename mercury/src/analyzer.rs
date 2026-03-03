@@ -11,6 +11,7 @@ pub enum PureScriptType {
     String,
     Maybe(Box<PureScriptType>),
     Array(Box<PureScriptType>),
+    Json,
     Custom(String),
 }
 
@@ -58,6 +59,8 @@ pub fn map_type(rust_type: &RustType) -> PureScriptType {
         RustType::String => PureScriptType::String,
         RustType::DateTime => PureScriptType::String, // ISO 8601 string
         RustType::Uuid => PureScriptType::Custom("MerchantFacingId".to_string()),
+        RustType::Decimal => PureScriptType::Number,
+        RustType::JsonValue => PureScriptType::Json,
         RustType::Option(inner) => PureScriptType::Maybe(Box::new(map_type(inner))),
         RustType::Vec(inner) => PureScriptType::Array(Box::new(map_type(inner))),
         RustType::Custom(name) => PureScriptType::Custom(name.clone()),
@@ -79,7 +82,28 @@ impl std::fmt::Display for PureScriptType {
             PureScriptType::String => write!(f, "String"),
             PureScriptType::Maybe(inner) => write!(f, "Maybe {}", inner),
             PureScriptType::Array(inner) => write!(f, "Array {}", inner),
+            PureScriptType::Json => write!(f, "Json"),
             PureScriptType::Custom(name) => write!(f, "{}", name),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_decimal_to_number() {
+        assert_eq!(map_type(&RustType::Decimal), PureScriptType::Number);
+    }
+
+    #[test]
+    fn test_map_json_value_to_json() {
+        assert_eq!(map_type(&RustType::JsonValue), PureScriptType::Json);
+    }
+
+    #[test]
+    fn test_json_display() {
+        assert_eq!(format!("{}", PureScriptType::Json), "Json");
     }
 }
