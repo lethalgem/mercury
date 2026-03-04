@@ -36,7 +36,7 @@ pub enum PureScriptType {
 /// - `bool` → `Boolean`
 /// - `String` → `String`
 /// - `DateTime<Utc>` → `String` (ISO 8601)
-/// - `Uuid` → `MerchantFacingId` (custom newtype)
+/// - `Uuid` → `UUID` (from Data.Uuid)
 /// - `Option<T>` → `Maybe T`
 /// - `Vec<T>` → `Array T`
 /// - Custom types → Same name
@@ -58,7 +58,7 @@ pub fn map_type(rust_type: &RustType) -> PureScriptType {
         RustType::Bool => PureScriptType::Boolean,
         RustType::String => PureScriptType::String,
         RustType::DateTime => PureScriptType::String, // ISO 8601 string
-        RustType::Uuid => PureScriptType::Custom("MerchantFacingId".to_string()),
+        RustType::Uuid => PureScriptType::Custom("UUID".to_string()),
         RustType::Decimal => PureScriptType::Number,
         RustType::JsonValue => PureScriptType::Json,
         RustType::Option(inner) => PureScriptType::Maybe(Box::new(map_type(inner))),
