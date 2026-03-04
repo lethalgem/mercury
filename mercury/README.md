@@ -100,7 +100,9 @@ Mercury maps Rust types to their PureScript equivalents:
 | `Option<T>` | `Maybe T` | Nullable fields |
 | `Vec<T>` | `Array T` | |
 | `chrono::DateTime<Utc>` | `String` | ISO 8601 format |
-| `uuid::Uuid` | `MerchantFacingId` | Custom newtype wrapper |
+| `uuid::Uuid` | `UUID` | From Data.Uuid |
+| `rust_decimal::Decimal` | `Number` | Serialized as number |
+| `serde_json::Value` | `Json` | Arbitrary JSON |
 | Custom types | Same name | Enums and structs |
 
 ### Nested Types

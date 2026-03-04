@@ -99,6 +99,7 @@ struct ImportNeeds {
     has_optional_fields: bool,
     has_enums: bool,
     has_json_value: bool,
+    has_uuid: bool,
 }
 
 /// Recursively check if a RustType contains JsonValue
@@ -111,6 +112,16 @@ fn contains_json_value(rust_type: &crate::types::RustType) -> bool {
     }
 }
 
+/// Recursively check if a RustType contains Uuid
+fn contains_uuid(rust_type: &crate::types::RustType) -> bool {
+    use crate::types::RustType;
+    match rust_type {
+        RustType::Uuid => true,
+        RustType::Option(inner) | RustType::Vec(inner) => contains_uuid(inner),
+        _ => false,
+    }
+}
+
 fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
     use crate::types::RustType;
 
@@ -119,6 +130,7 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
         has_optional_fields: false,
         has_enums: false,
         has_json_value: false,
+        has_uuid: false,
     };
 
     for type_def in type_defs {
@@ -131,6 +143,9 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
                     }
                     if contains_json_value(&field.field_type) {
                         needs.has_json_value = true;
+                    }
+                    if contains_uuid(&field.field_type) {
+                        needs.has_uuid = true;
                     }
                 }
             }
@@ -217,6 +232,9 @@ pub fn generate_module(
     }
     if needs.has_optional_fields {
         output.push_str("import Data.Maybe (Maybe(..))\n");
+    }
+    if needs.has_uuid {
+        output.push_str("import Data.Uuid (UUID)\n");
     }
 
     // Cross-module imports
@@ -651,5 +669,57 @@ mod tests {
         let output = generate_module("Generated.Models", &type_defs, &type_to_module);
 
         assert!(output.contains("import Data.Argonaut.Core (Json)"));
+    }
+
+    #[test]
+    fn test_generate_module_with_uuid_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "id".to_string(),
+                    json_name: "id".to_string(),
+                    field_type: RustType::Uuid,
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.Uuid (UUID)"));
+        assert!(output.contains("id :: UUID"));
+    }
+
+    #[test]
+    fn test_generate_module_with_optional_uuid_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "external_id".to_string(),
+                    json_name: "externalId".to_string(),
+                    field_type: RustType::Option(Box::new(RustType::Uuid)),
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.Uuid (UUID)"));
+        assert!(output.contains("externalId :: Maybe UUID"));
     }
 }
