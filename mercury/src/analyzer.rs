@@ -36,7 +36,11 @@ pub enum PureScriptType {
 /// - `bool` → `Boolean`
 /// - `String` → `String`
 /// - `DateTime<Utc>` → `String` (ISO 8601)
+<<<<<<< Updated upstream
 /// - `Uuid` → `MerchantFacingId` (custom newtype)
+=======
+/// - `Uuid` → `UUID` (from Data.UUID)
+>>>>>>> Stashed changes
 /// - `Option<T>` → `Maybe T`
 /// - `Vec<T>` → `Array T`
 /// - Custom types → Same name

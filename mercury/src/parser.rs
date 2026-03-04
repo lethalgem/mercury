@@ -169,7 +169,11 @@ fn parse_type(ty: &Type) -> RustType {
                 return RustType::DateTime;
             }
 
+<<<<<<< Updated upstream
             // Handle uuid::Uuid -> MerchantFacingId
+=======
+            // Handle uuid::Uuid -> UUID (Data.UUID)
+>>>>>>> Stashed changes
             // Accept both "uuid::Uuid" and bare "Uuid" (after import)
             if type_name == "Uuid" {
                 return RustType::Uuid;

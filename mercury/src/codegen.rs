@@ -218,6 +218,12 @@ pub fn generate_module(
     if needs.has_optional_fields {
         output.push_str("import Data.Maybe (Maybe(..))\n");
     }
+<<<<<<< Updated upstream
+=======
+    if needs.has_uuid {
+        output.push_str("import Data.UUID (UUID)\n");
+    }
+>>>>>>> Stashed changes
 
     // Cross-module imports
     let imports = compute_imports(module_name, type_defs, type_to_module);
@@ -652,4 +658,59 @@ mod tests {
 
         assert!(output.contains("import Data.Argonaut.Core (Json)"));
     }
+<<<<<<< Updated upstream
+=======
+
+    #[test]
+    fn test_generate_module_with_uuid_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "id".to_string(),
+                    json_name: "id".to_string(),
+                    field_type: RustType::Uuid,
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.UUID (UUID)"));
+        assert!(output.contains("id :: UUID"));
+    }
+
+    #[test]
+    fn test_generate_module_with_optional_uuid_import() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "external_id".to_string(),
+                    json_name: "externalId".to_string(),
+                    field_type: RustType::Option(Box::new(RustType::Uuid)),
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("import Data.UUID (UUID)"));
+        assert!(output.contains("externalId :: Maybe UUID"));
+    }
+>>>>>>> Stashed changes
 }
