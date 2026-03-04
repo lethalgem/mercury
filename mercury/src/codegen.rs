@@ -233,12 +233,9 @@ pub fn generate_module(
     if needs.has_optional_fields {
         output.push_str("import Data.Maybe (Maybe(..))\n");
     }
-<<<<<<< Updated upstream
-=======
     if needs.has_uuid {
         output.push_str("import Data.UUID (UUID)\n");
     }
->>>>>>> Stashed changes
 
     // Cross-module imports
     let imports = compute_imports(module_name, type_defs, type_to_module);
@@ -673,8 +670,6 @@ mod tests {
 
         assert!(output.contains("import Data.Argonaut.Core (Json)"));
     }
-<<<<<<< Updated upstream
-=======
 
     #[test]
     fn test_generate_module_with_uuid_import() {
@@ -727,5 +722,4 @@ mod tests {
         assert!(output.contains("import Data.UUID (UUID)"));
         assert!(output.contains("externalId :: Maybe UUID"));
     }
->>>>>>> Stashed changes
 }
