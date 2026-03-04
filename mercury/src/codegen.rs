@@ -99,6 +99,7 @@ struct ImportNeeds {
     has_optional_fields: bool,
     has_enums: bool,
     has_json_value: bool,
+    has_uuid: bool,
 }
 
 /// Recursively check if a RustType contains JsonValue
@@ -111,6 +112,16 @@ fn contains_json_value(rust_type: &crate::types::RustType) -> bool {
     }
 }
 
+/// Recursively check if a RustType contains Uuid
+fn contains_uuid(rust_type: &crate::types::RustType) -> bool {
+    use crate::types::RustType;
+    match rust_type {
+        RustType::Uuid => true,
+        RustType::Option(inner) | RustType::Vec(inner) => contains_uuid(inner),
+        _ => false,
+    }
+}
+
 fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
     use crate::types::RustType;
 
@@ -119,6 +130,7 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
         has_optional_fields: false,
         has_enums: false,
         has_json_value: false,
+        has_uuid: false,
     };
 
     for type_def in type_defs {
@@ -131,6 +143,9 @@ fn analyze_import_needs(type_defs: &[TypeDefinition]) -> ImportNeeds {
                     }
                     if contains_json_value(&field.field_type) {
                         needs.has_json_value = true;
+                    }
+                    if contains_uuid(&field.field_type) {
+                        needs.has_uuid = true;
                     }
                 }
             }
