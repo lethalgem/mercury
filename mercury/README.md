@@ -91,19 +91,19 @@ instance encodeProductStatus :: EncodeJson ProductStatus
 
 Mercury maps Rust types to their PureScript equivalents:
 
-| Rust Type | PureScript Type | Notes |
-|-----------|----------------|-------|
-| `i32`, `i64` | `Int` | |
-| `f32`, `f64` | `Number` | |
-| `bool` | `Boolean` | |
-| `String` | `String` | |
-| `Option<T>` | `Maybe T` | Nullable fields |
-| `Vec<T>` | `Array T` | |
-| `chrono::DateTime<Utc>` | `String` | ISO 8601 format |
-| `uuid::Uuid` | `UUID` | From Data.Uuid |
-| `rust_decimal::Decimal` | `Number` | Serialized as number |
-| `serde_json::Value` | `Json` | Arbitrary JSON |
-| Custom types | Same name | Enums and structs |
+| Rust Type               | PureScript Type | Notes                |
+| ----------------------- | --------------- | -------------------- |
+| `i32`, `i64`            | `Int`           |                      |
+| `f32`, `f64`            | `Number`        |                      |
+| `bool`                  | `Boolean`       |                      |
+| `String`                | `String`        |                      |
+| `Option<T>`             | `Maybe T`       | Nullable fields      |
+| `Vec<T>`                | `Array T`       |                      |
+| `chrono::DateTime<Utc>` | `String`        | ISO 8601 format      |
+| `uuid::Uuid`            | `UUID`          | From Data.UUID       |
+| `rust_decimal::Decimal` | `Number`        | Serialized as number |
+| `serde_json::Value`     | `Json`          | Arbitrary JSON       |
+| Custom types            | Same name       | Enums and structs    |
 
 ### Nested Types
 
@@ -142,6 +142,7 @@ pub struct ApiResponse {
 ```
 
 Supported rename rules:
+
 - `camelCase` - `user_name` → `userName`
 - `PascalCase` - `user_name` → `UserName`
 - `snake_case` - `UserName` → `user_name`
@@ -235,6 +236,7 @@ cargo run --bin mercury -- generate
 ```
 
 Output:
+
 ```
 ✓ Scanning workspace...
 ✓ Found 25 types in 8 files
@@ -269,6 +271,7 @@ This is useful in CI pipelines to ensure generated types stay synchronized with 
 ### Struct with Optional Fields
 
 **Rust:**
+
 ```rust
 #[mercury]
 #[serde(rename_all = "camelCase")]
@@ -280,6 +283,7 @@ pub struct UpdateProductRequest {
 ```
 
 **Generated PureScript:**
+
 ```purescript
 newtype UpdateProductRequest = UpdateProductRequest
   { productId :: Int
@@ -309,6 +313,7 @@ instance encodeUpdateProductRequest :: EncodeJson UpdateProductRequest where
 ### Enum
 
 **Rust:**
+
 ```rust
 #[mercury]
 #[derive(Serialize, Deserialize)]
@@ -322,6 +327,7 @@ pub enum OrderStatus {
 ```
 
 **Generated PureScript:**
+
 ```purescript
 data OrderStatus
   = Pending
@@ -356,6 +362,7 @@ instance encodeOrderStatus :: EncodeJson OrderStatus where
 Mercury includes comprehensive testing. See [TESTING.md](TESTING.md) for details.
 
 **Test Coverage:**
+
 - 48 total tests (45 unit + 3 integration)
 - Parser tests (10) - Rust AST parsing
 - Serde attribute tests (6) - Rename rules and attributes
@@ -366,6 +373,7 @@ Mercury includes comprehensive testing. See [TESTING.md](TESTING.md) for details
 - Integration tests (3) - End-to-end pipeline
 
 Run tests:
+
 ```bash
 cd lib/mercury
 cargo test

@@ -169,7 +169,7 @@ fn parse_type(ty: &Type) -> RustType {
                 return RustType::DateTime;
             }
 
-            // Handle uuid::Uuid -> UUID (Data.Uuid)
+            // Handle uuid::Uuid -> UUID (Data.UUID)
             // Accept both "uuid::Uuid" and bare "Uuid" (after import)
             if type_name == "Uuid" {
                 return RustType::Uuid;

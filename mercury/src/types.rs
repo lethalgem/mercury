@@ -78,7 +78,7 @@ pub enum RustType {
     String,
     /// chrono::DateTime<Utc> (serialized as ISO 8601 string)
     DateTime,
-    /// uuid::Uuid (mapped to UUID in PureScript from Data.Uuid)
+    /// uuid::Uuid (mapped to UUID in PureScript from Data.UUID)
     Uuid,
     /// rust_decimal::Decimal (serialized as number)
     Decimal,

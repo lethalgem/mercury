@@ -234,7 +234,7 @@ pub fn generate_module(
         output.push_str("import Data.Maybe (Maybe(..))\n");
     }
     if needs.has_uuid {
-        output.push_str("import Data.Uuid (UUID)\n");
+        output.push_str("import Data.UUID (UUID)\n");
     }
 
     // Cross-module imports
@@ -693,7 +693,7 @@ mod tests {
         let type_to_module = HashMap::new();
         let output = generate_module("Generated.Models", &type_defs, &type_to_module);
 
-        assert!(output.contains("import Data.Uuid (UUID)"));
+        assert!(output.contains("import Data.UUID (UUID)"));
         assert!(output.contains("id :: UUID"));
     }
 
@@ -719,7 +719,7 @@ mod tests {
         let type_to_module = HashMap::new();
         let output = generate_module("Generated.Models", &type_defs, &type_to_module);
 
-        assert!(output.contains("import Data.Uuid (UUID)"));
+        assert!(output.contains("import Data.UUID (UUID)"));
         assert!(output.contains("externalId :: Maybe UUID"));
     }
 }
