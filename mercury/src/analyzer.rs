@@ -36,7 +36,8 @@ pub enum PureScriptType {
 /// - `bool` → `Boolean`
 /// - `String` → `String`
 /// - `DateTime<Utc>` → `String` (ISO 8601)
-/// - `Uuid` → `UUID` (from Data.Uuid)
+/// - `Uuid` → `UUID` (from Data.UUID)
+/// - `Decimal` → `String` (rust_decimal serializes as string)
 /// - `Option<T>` → `Maybe T`
 /// - `Vec<T>` → `Array T`
 /// - Custom types → Same name
@@ -59,7 +60,7 @@ pub fn map_type(rust_type: &RustType) -> PureScriptType {
         RustType::String => PureScriptType::String,
         RustType::DateTime => PureScriptType::String, // ISO 8601 string
         RustType::Uuid => PureScriptType::Custom("UUID".to_string()),
-        RustType::Decimal => PureScriptType::Number,
+        RustType::Decimal => PureScriptType::String,
         RustType::JsonValue => PureScriptType::Json,
         RustType::Option(inner) => PureScriptType::Maybe(Box::new(map_type(inner))),
         RustType::Vec(inner) => PureScriptType::Array(Box::new(map_type(inner))),
@@ -113,8 +114,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_map_decimal_to_number() {
-        assert_eq!(map_type(&RustType::Decimal), PureScriptType::Number);
+    fn test_map_decimal_to_string() {
+        assert_eq!(map_type(&RustType::Decimal), PureScriptType::String);
     }
 
     #[test]
