@@ -80,7 +80,7 @@ pub enum RustType {
     DateTime,
     /// uuid::Uuid (mapped to UUID in PureScript from Data.UUID)
     Uuid,
-    /// rust_decimal::Decimal (serialized as number)
+    /// rust_decimal::Decimal (serialized as string)
     Decimal,
     /// serde_json::Value (arbitrary JSON)
     JsonValue,

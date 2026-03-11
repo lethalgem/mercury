@@ -75,6 +75,7 @@ pub fn generate_codecs(type_def: &TypeDefinition) -> String {
 /// Generate DecodeJson instance for a struct
 fn generate_struct_decoder(name: &str, struct_type: &StructType) -> String {
     let mut output = String::new();
+    let has_uuid_array = struct_type.fields.iter().any(|f| matches_uuid_array(&f.field_type));
 
     output.push_str(&format!(
         "instance decode{} :: DecodeJson {} where\n",
@@ -82,6 +83,14 @@ fn generate_struct_decoder(name: &str, struct_type: &StructType) -> String {
     ));
     output.push_str("  decodeJson json = do\n");
     output.push_str("    obj <- decodeJson json\n");
+
+    // Add helper function for UUID array parsing if needed
+    if has_uuid_array {
+        output.push_str("    let\n");
+        output.push_str("      parseUUIDWithError str = case parseUUID str of\n");
+        output.push_str("        Just uuid -> Right uuid\n");
+        output.push_str("        Nothing -> Left $ TypeMismatch \"Invalid UUID in array\"\n");
+    }
 
     // Decode each field
     for field in &struct_type.fields {
@@ -103,25 +112,83 @@ fn generate_struct_decoder(name: &str, struct_type: &StructType) -> String {
     output
 }
 
+/// Check if a RustType is or contains a Vec<Uuid>
+fn matches_uuid_array(rust_type: &RustType) -> bool {
+    matches!(rust_type, RustType::Vec(inner) if matches!(inner.as_ref(), RustType::Uuid))
+}
+
 /// Generate field decoder expression based on type
 ///
 /// Uses `.:?` (getFieldOptional') for Option<T> fields, which treats both
 /// missing keys and null values as Nothing. This matches Rust's serde behavior
 /// when Option::None fields are omitted from JSON (the default or with
 /// skip_serializing_if="Option::is_none").
+///
+/// Special handling for UUID types: since Rust's serde serializes UUIDs as strings,
+/// we generate code that decodes a string and then parses it to UUID using parseUUID.
 fn generate_field_decoder(field_name: &str, rust_type: &RustType) -> String {
     let _ps_type = map_type(rust_type);
 
     match rust_type {
-        RustType::Option(_) => {
-            // Optional fields use .:? which treats null as missing
-            // Matches Rust Option<T> with skip_serializing_if="Option::is_none"
-            format!("obj .:? \"{}\"", field_name)
+        RustType::Uuid => {
+            // Direct UUID field - decode string and parse to UUID
+            format!(
+                "do\n      {0}Str <- obj .: \"{1}\"\n      case parseUUID {0}Str of\n        Just uuid -> pure uuid\n        Nothing -> Left $ TypeMismatch \"Invalid UUID format for field '{1}'\"",
+                sanitize_field_name(field_name),
+                field_name
+            )
+        }
+        RustType::Option(inner) => {
+            match inner.as_ref() {
+                RustType::Uuid => {
+                    // Optional UUID field
+                    format!(
+                        "do\n      maybe{0}Str <- obj .:? \"{1}\"\n      case maybe{0}Str of\n        Nothing -> pure Nothing\n        Just str -> case parseUUID str of\n          Just uuid -> pure $ Just uuid\n          Nothing -> Left $ TypeMismatch \"Invalid UUID format for field '{1}'\"",
+                        capitalize_first(field_name),
+                        field_name
+                    )
+                }
+                _ => {
+                    // Other optional fields use .:? which treats null as missing
+                    format!("obj .:? \"{}\"", field_name)
+                }
+            }
+        }
+        RustType::Vec(inner) => {
+            match inner.as_ref() {
+                RustType::Uuid => {
+                    // Array of UUIDs - decode array of strings and parse each
+                    format!(
+                        "do\n      {0}Strs <- obj .: \"{1}\"\n      traverse parseUUIDWithError {0}Strs",
+                        sanitize_field_name(field_name),
+                        field_name
+                    )
+                }
+                _ => {
+                    // Other arrays use standard decoding
+                    format!("obj .: \"{}\"", field_name)
+                }
+            }
         }
         _ => {
             // Required fields use .:
             format!("obj .: \"{}\"", field_name)
         }
+    }
+}
+
+/// Sanitize field name for use as a variable name
+/// Removes special characters and ensures it's a valid PureScript identifier
+fn sanitize_field_name(name: &str) -> String {
+    name.replace("_", "").replace("-", "")
+}
+
+/// Capitalize the first character of a string
+fn capitalize_first(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
     }
 }
 
@@ -141,15 +208,54 @@ fn generate_struct_encoder(name: &str, struct_type: &StructType) -> String {
         if i > 0 {
             output.push_str("\n      , ");
         }
-        output.push_str(&format!(
-            "\"{}\": record.{}",
-            field.json_name, field.json_name
-        ));
+        let encode_expr = generate_field_encoder(&field.json_name, &field.field_type);
+        output.push_str(&format!("\"{}\": {}", field.json_name, encode_expr));
     }
 
     output.push_str("\n      }\n");
 
     output
+}
+
+/// Generate field encoder expression based on type
+///
+/// Special handling for UUID types: since Rust's serde serializes UUIDs as strings,
+/// we generate code that converts UUID to string using toString.
+fn generate_field_encoder(field_name: &str, rust_type: &RustType) -> String {
+    match rust_type {
+        RustType::Uuid => {
+            // Direct UUID field - convert to string
+            format!("toString record.{}", field_name)
+        }
+        RustType::Option(inner) => {
+            match inner.as_ref() {
+                RustType::Uuid => {
+                    // Optional UUID field - map toString over Maybe
+                    format!("map toString record.{}", field_name)
+                }
+                _ => {
+                    // Other optional fields encode directly
+                    format!("record.{}", field_name)
+                }
+            }
+        }
+        RustType::Vec(inner) => {
+            match inner.as_ref() {
+                RustType::Uuid => {
+                    // Array of UUIDs - map toString over array
+                    format!("map toString record.{}", field_name)
+                }
+                _ => {
+                    // Other arrays encode directly
+                    format!("record.{}", field_name)
+                }
+            }
+        }
+        _ => {
+            // Standard field encoding
+            format!("record.{}", field_name)
+        }
+    }
 }
 
 /// Generate DecodeJson instance for an enum
@@ -313,5 +419,113 @@ mod tests {
 
         // Optional fields should use .:? instead of .:
         assert!(output.contains("email <- obj .:? \"email\""));
+    }
+
+    #[test]
+    fn test_generate_uuid_field_decoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "id".to_string(),
+                json_name: "id".to_string(),
+                field_type: RustType::Uuid,
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_decoder("Record", &struct_type);
+
+        // Should decode string and parse to UUID
+        assert!(output.contains("idStr <- obj .: \"id\""));
+        assert!(output.contains("parseUUID idStr"));
+        assert!(output.contains("Invalid UUID format for field 'id'"));
+    }
+
+    #[test]
+    fn test_generate_uuid_field_encoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "id".to_string(),
+                json_name: "id".to_string(),
+                field_type: RustType::Uuid,
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_encoder("Record", &struct_type);
+
+        // Should convert UUID to string
+        assert!(output.contains("toString record.id"));
+    }
+
+    #[test]
+    fn test_generate_optional_uuid_field_decoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "externalId".to_string(),
+                json_name: "externalId".to_string(),
+                field_type: RustType::Option(Box::new(RustType::Uuid)),
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_decoder("Record", &struct_type);
+
+        // Should decode optional string and parse to Maybe UUID
+        assert!(output.contains("maybeExternalIdStr <- obj .:? \"externalId\""));
+        assert!(output.contains("parseUUID str"));
+        assert!(output.contains("Just uuid -> pure $ Just uuid"));
+    }
+
+    #[test]
+    fn test_generate_optional_uuid_field_encoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "externalId".to_string(),
+                json_name: "externalId".to_string(),
+                field_type: RustType::Option(Box::new(RustType::Uuid)),
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_encoder("Record", &struct_type);
+
+        // Should map toString over Maybe UUID
+        assert!(output.contains("map toString record.externalId"));
+    }
+
+    #[test]
+    fn test_generate_uuid_array_field_decoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "ids".to_string(),
+                json_name: "ids".to_string(),
+                field_type: RustType::Vec(Box::new(RustType::Uuid)),
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_decoder("Record", &struct_type);
+
+        // Should decode array of strings and parse each to UUID
+        assert!(output.contains("idsStrs <- obj .: \"ids\""));
+        assert!(output.contains("traverse parseUUIDWithError idsStrs"));
+        assert!(output.contains("parseUUIDWithError str = case parseUUID str"));
+    }
+
+    #[test]
+    fn test_generate_uuid_array_field_encoder() {
+        let struct_type = StructType {
+            fields: vec![Field {
+                rust_name: "ids".to_string(),
+                json_name: "ids".to_string(),
+                field_type: RustType::Vec(Box::new(RustType::Uuid)),
+            }],
+            rename_all: None,
+        };
+
+        let output = generate_struct_encoder("Record", &struct_type);
+
+        // Should map toString over array of UUIDs
+        assert!(output.contains("map toString record.ids"));
     }
 }

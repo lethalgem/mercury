@@ -175,7 +175,7 @@ fn parse_type(ty: &Type) -> RustType {
                 return RustType::Uuid;
             }
 
-            // Handle rust_decimal::Decimal -> Number
+            // Handle rust_decimal::Decimal -> String
             if type_name == "Decimal" {
                 return RustType::Decimal;
             }

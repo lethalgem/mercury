@@ -101,7 +101,7 @@ Mercury maps Rust types to their PureScript equivalents:
 | `Vec<T>`                | `Array T`       |                      |
 | `chrono::DateTime<Utc>` | `String`        | ISO 8601 format      |
 | `uuid::Uuid`            | `UUID`          | From Data.UUID       |
-| `rust_decimal::Decimal` | `Number`        | Serialized as number |
+| `rust_decimal::Decimal` | `String`        | Serialized as string |
 | `serde_json::Value`     | `Json`          | Arbitrary JSON       |
 | Custom types            | Same name       | Enums and structs    |
 

@@ -231,10 +231,15 @@ pub fn generate_module(
         output.push_str("import Data.Either (Either(..))\n");
     }
     if needs.has_optional_fields {
-        output.push_str("import Data.Maybe (Maybe(..))\n");
+        // Only import constructors (Just, Nothing) if we have UUIDs that need pattern matching
+        if needs.has_uuid {
+            output.push_str("import Data.Maybe (Maybe(..))\n");
+        } else {
+            output.push_str("import Data.Maybe (Maybe)\n");
+        }
     }
     if needs.has_uuid {
-        output.push_str("import Data.UUID (UUID)\n");
+        output.push_str("import Data.UUID (UUID, parseUUID, toString)\n");
     }
 
     // Cross-module imports
@@ -693,7 +698,7 @@ mod tests {
         let type_to_module = HashMap::new();
         let output = generate_module("Generated.Models", &type_defs, &type_to_module);
 
-        assert!(output.contains("import Data.UUID (UUID)"));
+        assert!(output.contains("import Data.UUID (UUID, parseUUID, toString)"));
         assert!(output.contains("id :: UUID"));
     }
 
@@ -719,7 +724,37 @@ mod tests {
         let type_to_module = HashMap::new();
         let output = generate_module("Generated.Models", &type_defs, &type_to_module);
 
-        assert!(output.contains("import Data.UUID (UUID)"));
+        assert!(output.contains("import Data.UUID (UUID, parseUUID, toString)"));
         assert!(output.contains("externalId :: Maybe UUID"));
+        // Should import Maybe(..) when UUID is present (constructors needed for pattern matching)
+        assert!(output.contains("import Data.Maybe (Maybe(..))"));
+    }
+
+    #[test]
+    fn test_generate_module_with_optional_field_no_uuid() {
+        use std::collections::HashMap;
+
+        let type_defs = vec![TypeDefinition {
+            name: "User".to_string(),
+            source_file: PathBuf::from("test.rs"),
+            line: 0,
+            kind: TypeKind::Struct(StructType {
+                fields: vec![Field {
+                    rust_name: "email".to_string(),
+                    json_name: "email".to_string(),
+                    field_type: RustType::Option(Box::new(RustType::String)),
+                }],
+                rename_all: None,
+            }),
+            serde_attrs: SerdeAttrs::default(),
+        }];
+
+        let type_to_module = HashMap::new();
+        let output = generate_module("Generated.Models", &type_defs, &type_to_module);
+
+        assert!(output.contains("email :: Maybe String"));
+        // Should import just Maybe (without constructors) when no UUID is present
+        assert!(output.contains("import Data.Maybe (Maybe)"));
+        assert!(!output.contains("import Data.Maybe (Maybe(..))"));
     }
 }
