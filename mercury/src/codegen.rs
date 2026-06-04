@@ -230,15 +230,11 @@ pub fn generate_module(
     if needs.has_enums {
         output.push_str("import Data.Either (Either(..))\n");
     }
-    if needs.has_optional_fields {
-        // Only import constructors (Just, Nothing) if we have UUIDs that need pattern matching
-        if needs.has_uuid {
-            output.push_str("import Data.Maybe (Maybe(..))\n");
-        } else {
-            output.push_str("import Data.Maybe (Maybe)\n");
-        }
+    if needs.has_optional_fields && !needs.has_uuid {
+        output.push_str("import Data.Maybe (Maybe)\n");
     }
     if needs.has_uuid {
+        output.push_str("import Data.Maybe (Maybe(..))\n");
         output.push_str("import Data.UUID (UUID, parseUUID, toString)\n");
     }
 
@@ -700,6 +696,7 @@ mod tests {
 
         assert!(output.contains("import Data.UUID (UUID, parseUUID, toString)"));
         assert!(output.contains("id :: UUID"));
+        assert!(output.contains("import Data.Maybe (Maybe(..))"));
     }
 
     #[test]
