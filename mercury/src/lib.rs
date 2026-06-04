@@ -71,7 +71,8 @@ pub fn generate<P: AsRef<Path>>(workspace_root: P) -> Result<GenerationResult> {
     let workspace_root = workspace_root.as_ref();
 
     // Step 1: Scan for annotated files
-    let annotated_files = scanner::scan_workspace(workspace_root)?;
+    let mut annotated_files = scanner::scan_workspace(workspace_root)?;
+    annotated_files.sort_by(|a, b| a.path.cmp(&b.path));
 
     if annotated_files.is_empty() {
         return Ok(GenerationResult {
