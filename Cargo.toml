@@ -4,7 +4,7 @@ members = ["mercury-derive", "mercury", "mercury-cli"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "0.5.2"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Ian Cash <iwc123@gmail.com>"]
@@ -14,8 +14,8 @@ homepage = "https://github.com/lethalgem/mercury"
 
 [workspace.dependencies]
 # Mercury internal dependencies
-cargo-mercury = { path = "mercury", version = "0.5.1" }
-mercury-derive = { path = "mercury-derive", version = "0.5.1" }
+cargo-mercury = { path = "mercury", version = "0.5.2" }
+mercury-derive = { path = "mercury-derive", version = "0.5.2" }
 
 # External dependencies
 anyhow = "1.0"
