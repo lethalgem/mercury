@@ -39,5 +39,47 @@ fn test_deterministic_output() {
     }
 }
 
+/// Two annotated files share a basename (`models.rs`), so they collapse into the
+/// same generated module (`Generated.Models`) and their types are concatenated.
+/// `generate` sorts scanned files by path before parsing, so the emitted order
+/// must follow the source path, not the filesystem scan order or the type name.
+///
+/// We place `Zebra` under `aaa_crate/` and `Apple` under `zzz_crate/`: path order
+/// (aaa < zzz) yields Zebra-before-Apple, while type-name order would be the
+/// reverse. Asserting Zebra precedes Apple proves ordering is path-driven.
+#[test]
+fn test_output_ordered_by_source_path() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+
+    let write_struct = |dir: &str, name: &str| {
+        let crate_src = root.join(dir).join("src");
+        fs::create_dir_all(&crate_src).unwrap();
+        fs::write(
+            crate_src.join("models.rs"),
+            format!("#[mercury]\npub struct {name} {{\n    pub id: i32,\n}}\n"),
+        )
+        .unwrap();
+    };
+
+    write_struct("aaa_crate", "Zebra");
+    write_struct("zzz_crate", "Apple");
+
+    let result = cargo_mercury::generate(root).unwrap();
+    assert_eq!(result.type_count, 2);
+    assert_eq!(result.module_count, 1, "same basename collapses to one module");
+
+    let module = &result.generated_files[0];
+    let output = fs::read_to_string(module).unwrap();
+
+    let zebra = output.find("Zebra").expect("Zebra type missing from output");
+    let apple = output.find("Apple").expect("Apple type missing from output");
+    assert!(
+        zebra < apple,
+        "types must be ordered by source path (aaa_crate before zzz_crate), \
+         not by type name; got:\n{output}"
+    );
+}
+
 // Note: Cross-module import tests are application-specific
 // and tested in the consuming project
