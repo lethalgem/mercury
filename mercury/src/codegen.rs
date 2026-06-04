@@ -213,7 +213,7 @@ pub fn generate_module(
     if needs.has_optional_fields {
         decode_imports.push("(.:?)");
     }
-    if needs.has_enums {
+    if needs.has_enums || needs.has_uuid {
         decode_imports.push("JsonDecodeError(..)");
     }
     output.push_str(&format!(
@@ -227,7 +227,7 @@ pub fn generate_module(
     output.push_str("import Data.Argonaut.Decode.Class (class DecodeJson)\n");
     output.push_str("import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)\n");
 
-    if needs.has_enums {
+    if needs.has_enums || needs.has_uuid {
         output.push_str("import Data.Either (Either(..))\n");
     }
     if needs.has_optional_fields && !needs.has_uuid {
@@ -697,6 +697,8 @@ mod tests {
         assert!(output.contains("import Data.UUID (UUID, parseUUID, toString)"));
         assert!(output.contains("id :: UUID"));
         assert!(output.contains("import Data.Maybe (Maybe(..))"));
+        assert!(output.contains("import Data.Either (Either(..))"));
+        assert!(output.contains("JsonDecodeError(..)"));
     }
 
     #[test]
@@ -725,6 +727,8 @@ mod tests {
         assert!(output.contains("externalId :: Maybe UUID"));
         // Should import Maybe(..) when UUID is present (constructors needed for pattern matching)
         assert!(output.contains("import Data.Maybe (Maybe(..))"));
+        assert!(output.contains("import Data.Either (Either(..))"));
+        assert!(output.contains("JsonDecodeError(..)"));
     }
 
     #[test]
