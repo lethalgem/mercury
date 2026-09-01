@@ -87,12 +87,14 @@ pub fn scan_workspace<P: AsRef<Path>>(workspace_root: P) -> Result<Vec<Annotated
 /// - .git/
 /// - node_modules/
 /// - frontend/ (we're generating for this, not scanning it)
+/// - .claude/ (Claude Code worktrees hold a full checkout copy — scanning
+///   them generates every annotated type a second time)
 fn is_excluded(path: &Path) -> bool {
     path.components().any(|component| {
         let name = component.as_os_str().to_string_lossy();
         matches!(
             name.as_ref(),
-            "target" | ".git" | "node_modules" | "frontend" | "dist" | "build"
+            "target" | ".git" | "node_modules" | "frontend" | "dist" | "build" | ".claude"
         )
     })
 }
@@ -172,11 +174,35 @@ mod tests {
     }
 
     #[test]
+    fn test_scan_skips_claude_worktrees() {
+        let temp_dir = TempDir::new().unwrap();
+        let wt_dir = temp_dir.path().join(".claude/worktrees/wt/src");
+        fs::create_dir_all(&wt_dir).unwrap();
+
+        let mut file = fs::File::create(wt_dir.join("dup.rs")).unwrap();
+        writeln!(
+            file,
+            r#"
+            #[mercury]
+            pub struct Foo {{ pub id: i32 }}
+        "#
+        )
+        .unwrap();
+
+        let result = scan_workspace(temp_dir.path()).unwrap();
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
     fn test_is_excluded() {
         assert!(is_excluded(Path::new("target/debug/foo.rs")));
         assert!(is_excluded(Path::new(".git/config")));
         assert!(is_excluded(Path::new("node_modules/pkg/index.js")));
         assert!(is_excluded(Path::new("frontend/src/Main.purs")));
+        assert!(is_excluded(Path::new(
+            ".claude/worktrees/wt/app/src/handlers.rs"
+        )));
 
         assert!(!is_excluded(Path::new("src/main.rs")));
         assert!(!is_excluded(Path::new("lib/mercury/src/lib.rs")));
