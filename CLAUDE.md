@@ -2,7 +2,7 @@
 
 ## Current published version
 
-**0.5.2** (published to crates.io)
+**0.5.3** (published to crates.io)
 
 All three crates share the workspace version defined in the root `Cargo.toml`
 under `[workspace.package].version`. Keep them in lockstep.
